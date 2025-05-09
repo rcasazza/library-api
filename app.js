@@ -39,13 +39,13 @@ export function buildApp() {
 
   // Register CORS
   fastify.register(cors, {
-    origin: 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
   });
 
   // Register JWT plugin with secret
   fastify.register(jwt, {
-    secret: 'your-super-secret-key', // Replace with env var in prod
+    secret: process.env.JWT_SECRET,
   });
 
   // Auth hook
