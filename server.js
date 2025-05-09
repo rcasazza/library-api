@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import { buildApp } from './app.js';
 
+dotenv.config();
+
 const app = buildApp();
 
 const port = process.env.PORT || 3000;

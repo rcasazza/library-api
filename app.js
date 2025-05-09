@@ -6,6 +6,8 @@ import booksRoutes from './routes/books.js';
 import refreshRoutes from './routes/refresh.js';
 import logoutRoutes from './routes/logout.js';
 import * as tokenStore from './lib/tokenStore.js';
+import db from './lib/db.js';
+
 import {
   revokeAccessToken,
   isAccessTokenRevoked,
@@ -36,6 +38,8 @@ export function buildApp() {
     revokeAccessToken,
     isAccessTokenRevoked,
   });
+
+  fastify.decorate('db', db); // app.db is now accessible in routes
 
   // Register CORS
   fastify.register(cors, {

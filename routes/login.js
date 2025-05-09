@@ -8,7 +8,7 @@ export default async function loginRoutes(fastify) {
     if (userName === 'admin' && password === 'secret') {
       const accessToken = fastify.jwt.sign(
         { userName },
-        { expiresIn: '1m' } // xx-minute access token
+        { expiresIn: '10m' } // xx-minute access token
       );
 
       const jti = uuidv4();
