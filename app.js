@@ -4,6 +4,12 @@ import cors from '@fastify/cors';
 import loginRoutes from './routes/login.js';
 import booksRoutes from './routes/books.js';
 import refreshRoutes from './routes/refresh.js';
+import logoutRoutes from './routes/logout.js';
+import * as tokenStore from './lib/tokenStore.js';
+import {
+  revokeAccessToken,
+  isAccessTokenRevoked,
+} from './lib/tokenBlackList.js';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -22,6 +28,15 @@ export function buildApp() {
       : true, // enable normal logging in production
   });
 
+  // Decorate with refresh token store
+  fastify.decorate('tokenStore', tokenStore);
+
+  // Attach the shared blacklist to the Fastify instance
+  fastify.decorate('tokenBlacklist', {
+    revokeAccessToken,
+    isAccessTokenRevoked,
+  });
+
   // Register CORS
   fastify.register(cors, {
     origin: 'http://localhost:5173',
@@ -36,12 +51,25 @@ export function buildApp() {
   // Auth hook
   fastify.addHook('onRequest', async (request, reply) => {
     const url = request.raw.url;
-    if (url.startsWith('/api/login') || url.startsWith('/api/refresh')) {
+    if (
+      url.startsWith('/api/login') ||
+      url.startsWith('/api/refresh') ||
+      url.startsWith('/api/logout')
+    ) {
       return;
     }
 
     try {
       await request.jwtVerify(); // 401 if expired or invalid
+
+      const token = request.headers.authorization?.split(' ')[1];
+
+      console.log('Checking token:', token);
+      console.log('Is blacklisted:', isAccessTokenRevoked(token));
+
+      if (fastify.tokenBlacklist.isAccessTokenRevoked(token)) {
+        return reply.code(401).send({ error: 'Token has been revoked' });
+      }
     } catch (err) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
@@ -51,6 +79,7 @@ export function buildApp() {
   fastify.register(loginRoutes);
   fastify.register(booksRoutes);
   fastify.register(refreshRoutes);
+  fastify.register(logoutRoutes);
 
   return fastify;
 }
