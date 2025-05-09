@@ -1,7 +1,9 @@
 import Fastify from 'fastify';
+import jwt from '@fastify/jwt';
 import cors from '@fastify/cors';
 import loginRoutes from './routes/login.js';
 import booksRoutes from './routes/books.js';
+import refreshRoutes from './routes/refresh.js';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -26,25 +28,29 @@ export function buildApp() {
     credentials: true,
   });
 
+  // Register JWT plugin with secret
+  fastify.register(jwt, {
+    secret: 'your-super-secret-key', // Replace with env var in prod
+  });
+
   // Auth hook
   fastify.addHook('onRequest', async (request, reply) => {
-    const url = request.raw.url; // reliable at this point in lifecycle
-
-    // Allow login route through without auth
-    if (url.startsWith('/api/login')) return;
-
-    const auth = request.headers.authorization;
-    const token = auth?.split(' ')[1];
-    if (!token || token !== 'dummy-access') {
-      return reply.code(401).send({ error: 'Unauthorized' });
+    const url = request.raw.url;
+    if (url.startsWith('/api/login') || url.startsWith('/api/refresh')) {
+      return;
     }
 
-    request.user = { userName: 'admin' };
+    try {
+      await request.jwtVerify(); // 401 if expired or invalid
+    } catch (err) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
   });
 
   // Routes
   fastify.register(loginRoutes);
   fastify.register(booksRoutes);
+  fastify.register(refreshRoutes);
 
   return fastify;
 }

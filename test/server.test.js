@@ -19,7 +19,8 @@ describe('Library API', () => {
       .send({ userName: 'admin', password: 'secret' });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('token');
+    expect(res.body).toHaveProperty('accessToken');
+    expect(res.body).toHaveProperty('refreshToken');
   });
 
   it('should reject access to /api/books without token', async () => {
@@ -28,11 +29,19 @@ describe('Library API', () => {
   });
 
   it('should return books with valid token', async () => {
+    // 🔑 First, login to get a real JWT
+    const loginRes = await request(app.server)
+      .post('/api/login')
+      .send({ userName: 'admin', password: 'secret' });
+
+    const accessToken = loginRes.body.accessToken;
+
+    // 🧪 Use the token to access the protected route
     const res = await request(app.server)
       .get('/api/books')
-      .set('Authorization', 'Bearer dummy-access');
+      .set('Authorization', `Bearer ${accessToken}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toBeInstanceOf(Array);
+    expect(Array.isArray(res.body)).toBe(true);
   });
 });

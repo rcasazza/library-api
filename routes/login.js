@@ -4,13 +4,21 @@ export default async function loginRoutes(fastify) {
     const { userName, password } = request.body;
 
     if (userName === 'admin' && password === 'secret') {
-      return {
-        success: true,
-        token: 'dummy-access',
-        refreshToken: 'dummy-refresh',
-      };
+      const accessToken = fastify.jwt.sign(
+        { userName },
+        { expiresIn: '1m' } // xx-minute access token
+      );
+
+      const refreshToken = fastify.jwt.sign(
+        { userName },
+        { expiresIn: '7d' } // 7-day refresh token
+      );
+
+      return { accessToken, refreshToken };
     }
 
-    return reply.code(403).send({ success: false, message: 'Invalid credentials' });
+    return reply
+      .code(403)
+      .send({ success: false, message: 'Invalid credentials' });
   });
 }
