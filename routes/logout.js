@@ -12,10 +12,15 @@ export default async function logoutRoutes(fastify) {
     try {
       const decoded = fastify.jwt.verify(refreshToken);
       if (decoded.jti) {
-        revokeRefreshToken(decoded.jti);
+        fastify.tokenStore.revokeRefreshToken(decoded.jti);
       }
     } catch (err) {
       // Swallow the error — even invalid tokens result in 200
+    }
+
+    const accessToken = request.headers.authorization?.split(' ')[1];
+    if (accessToken) {
+      fastify.tokenBlacklist.revokeAccessToken(accessToken);
     }
 
     return reply.send({ success: true });

@@ -1,29 +1,35 @@
-// routes/login.js
-import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcrypt';
 
 export default async function loginRoutes(fastify) {
   fastify.post('/api/login', async (request, reply) => {
     const { userName, password } = request.body;
 
-    if (userName === 'admin' && password === 'secret') {
-      const accessToken = fastify.jwt.sign(
-        { userName },
-        { expiresIn: '10m' } // xx-minute access token
-      );
+    const user = fastify.db
+      .prepare('SELECT * FROM users WHERE username = ?')
+      .get(userName);
 
-      const jti = uuidv4();
-      const refreshToken = fastify.jwt.sign(
-        { userName, jti },
-        { expiresIn: '7d' }
-      );
-
-      fastify.tokenStore.storeRefreshToken(jti, refreshToken);
-
-      return { accessToken, refreshToken };
+    if (!user) {
+      console.log('User not found:', userName);
+      return reply.code(403).send({ error: 'Invalid credentials' });
     }
 
-    return reply
-      .code(403)
-      .send({ success: false, message: 'Invalid credentials' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return reply.code(403).send({ error: 'Invalid credentials' });
+    }
+
+    const accessToken = fastify.jwt.sign(
+      { userName: user.username, role: user.role },
+      { expiresIn: '15m' }
+    );
+
+    const refreshToken = fastify.jwt.sign(
+      { userName: user.username, role: user.role, jti: crypto.randomUUID() },
+      { expiresIn: '7d' }
+    );
+
+    fastify.tokenStore.storeRefreshToken(user.jti, refreshToken);
+
+    return { accessToken, refreshToken };
   });
 }

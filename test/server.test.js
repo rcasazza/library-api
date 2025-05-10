@@ -1,4 +1,5 @@
 import { describe, it, afterAll, beforeAll, expect } from 'vitest';
+import bcrypt from 'bcrypt';
 import request from 'supertest';
 import { buildApp } from '../app.js';
 
@@ -6,6 +7,17 @@ const app = buildApp();
 
 beforeAll(async () => {
   await app.ready(); // ✅ wait until Fastify is fully initialized
+
+  // Insert a test user into the DB
+  const hashedPassword = await bcrypt.hash('secret', 10);
+  app.db
+    .prepare(
+      `
+    INSERT OR IGNORE INTO users (username, password, email, role, is_verified)
+    VALUES (?, ?, ?, ?, ?)
+  `
+    )
+    .run('testuser', hashedPassword, 'test@example.com', 'user', 1);
 });
 
 afterAll(async () => {
@@ -16,7 +28,7 @@ describe('Library API', () => {
   it('should login successfully with correct credentials', async () => {
     const res = await request(app.server)
       .post('/api/login')
-      .send({ userName: 'admin', password: 'secret' });
+      .send({ userName: 'testuser', password: 'secret' });
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('accessToken');
@@ -32,7 +44,7 @@ describe('Library API', () => {
     // 🔑 First, login to get a real JWT
     const loginRes = await request(app.server)
       .post('/api/login')
-      .send({ userName: 'admin', password: 'secret' });
+      .send({ userName: 'testuser', password: 'secret' });
 
     const accessToken = loginRes.body.accessToken;
 

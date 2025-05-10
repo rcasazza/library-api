@@ -145,3 +145,30 @@ it('should reject expired refresh token', async () => {
 
   expect(res.statusCode).toBe(401);
 });
+
+it('should revoke both refresh and access tokens on logout', async () => {
+  const { accessToken, refreshToken } = createUserTokens(app);
+  const decoded = app.jwt.decode(refreshToken);
+  app.tokenStore.storeRefreshToken(decoded.jti, refreshToken);
+
+  // Logout using both tokens
+  const res = await request(app.server)
+    .post('/api/logout')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({ refreshToken });
+
+  expect(res.statusCode).toBe(200);
+  expect(res.body).toEqual({ success: true });
+
+  // Access token should be blacklisted
+  const booksRes = await request(app.server)
+    .get('/api/books')
+    .set('Authorization', `Bearer ${accessToken}`);
+  expect(booksRes.statusCode).toBe(401);
+
+  // Refresh token should be revoked
+  const refreshRes = await request(app.server)
+    .post('/api/refresh')
+    .send({ refreshToken });
+  expect(refreshRes.statusCode).toBe(401);
+});

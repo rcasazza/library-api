@@ -5,6 +5,7 @@ import loginRoutes from './routes/login.js';
 import booksRoutes from './routes/books.js';
 import refreshRoutes from './routes/refresh.js';
 import logoutRoutes from './routes/logout.js';
+import adminRoutes from './routes/admins.js';
 import * as tokenStore from './lib/tokenStore.js';
 import db from './lib/db.js';
 
@@ -40,6 +41,13 @@ export function buildApp() {
   });
 
   fastify.decorate('db', db); // app.db is now accessible in routes
+
+  fastify.decorateRequest('requireRole', function (role) {
+    const user = this.user;
+    if (!user || user.role !== role) {
+      throw fastify.httpErrors.forbidden('Forbidden');
+    }
+  });
 
   // Register CORS
   fastify.register(cors, {
@@ -79,11 +87,13 @@ export function buildApp() {
     }
   });
 
-  // Routes
+  fastify.register(adminRoutes);
   fastify.register(loginRoutes);
   fastify.register(booksRoutes);
   fastify.register(refreshRoutes);
   fastify.register(logoutRoutes);
+
+  console.log('[app.js] fastify.requireRole =', typeof fastify.requireRole);
 
   return fastify;
 }
