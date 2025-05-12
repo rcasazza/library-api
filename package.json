@@ -6,7 +6,11 @@
   "scripts": {
     "seed": "node seed-admin.js",
     "dev": "node seed-admin.js && node server.js",
-    "test": "node --import dotenv/config node_modules/vitest/vitest.mjs"
+    "test": "dotenv -e .env -- vitest run",
+    "test:watch": "dotenv -e .env -- vitest",
+    "test:file": "dotenv -e .env -- vitest run test/register.test.js",
+    "test:filter": "dotenv -e .env -- vitest run -t",
+    "test:coverage": "dotenv -e .env -- vitest run --coverage"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +27,8 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^3.1.2",
+    "dotenv-cli": "^8.0.0",
     "pino-pretty": "^13.0.0",
     "supertest": "^7.1.0",
     "vitest": "^3.1.2"

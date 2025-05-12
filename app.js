@@ -6,6 +6,8 @@ import booksRoutes from './routes/books.js';
 import refreshRoutes from './routes/refresh.js';
 import logoutRoutes from './routes/logout.js';
 import adminRoutes from './routes/admins.js';
+import registerRoutes from './routes/register.js';
+
 import * as tokenStore from './lib/tokenStore.js';
 import db from './lib/db.js';
 
@@ -28,19 +30,15 @@ export function buildApp() {
             },
           },
         }
-      : true, // enable normal logging in production
+      : true,
   });
 
-  // Decorate with refresh token store
   fastify.decorate('tokenStore', tokenStore);
-
-  // Attach the shared blacklist to the Fastify instance
   fastify.decorate('tokenBlacklist', {
     revokeAccessToken,
     isAccessTokenRevoked,
   });
-
-  fastify.decorate('db', db); // app.db is now accessible in routes
+  fastify.decorate('db', db);
 
   fastify.decorateRequest('requireRole', function (role) {
     const user = this.user;
@@ -49,35 +47,30 @@ export function buildApp() {
     }
   });
 
-  // Register CORS
   fastify.register(cors, {
     origin: process.env.CORS_ORIGIN,
     credentials: true,
   });
 
-  // Register JWT plugin with secret
   fastify.register(jwt, {
     secret: process.env.JWT_SECRET,
   });
 
-  // Auth hook
   fastify.addHook('onRequest', async (request, reply) => {
     const url = request.raw.url;
     if (
       url.startsWith('/api/login') ||
       url.startsWith('/api/refresh') ||
-      url.startsWith('/api/logout')
+      url.startsWith('/api/logout') ||
+      url.startsWith('/api/register')
     ) {
       return;
     }
 
     try {
-      await request.jwtVerify(); // 401 if expired or invalid
+      await request.jwtVerify();
 
       const token = request.headers.authorization?.split(' ')[1];
-
-      console.log('Checking token:', token);
-      console.log('Is blacklisted:', isAccessTokenRevoked(token));
 
       if (fastify.tokenBlacklist.isAccessTokenRevoked(token)) {
         return reply.code(401).send({ error: 'Token has been revoked' });
@@ -92,8 +85,7 @@ export function buildApp() {
   fastify.register(booksRoutes);
   fastify.register(refreshRoutes);
   fastify.register(logoutRoutes);
-
-  console.log('[app.js] fastify.requireRole =', typeof fastify.requireRole);
+  fastify.register(registerRoutes);
 
   return fastify;
 }
