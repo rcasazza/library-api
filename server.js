@@ -1,18 +1,17 @@
+import { buildApp } from './app.js'; // or './buildApp.js' if renamed
 import dotenv from 'dotenv';
-import { buildApp } from './app.js';
 
-dotenv.config();
+dotenv.config(); // Load environment variables from .env
 
-const app = buildApp();
+const PORT = process.env.PORT || 3000;
 
-const port = process.env.PORT || 3000;
+const app = await buildApp();
 
-app.ready().then(() => {
-  app.listen({ port }, (err) => {
-    if (err) {
-      app.log.error(err);
-      process.exit(1);
-    }
-    console.log('🚀 Server listening on http://localhost:3000');
-  });
+app.listen({ port: PORT }, (err) => {
+  if (err) {
+    console.error('❌ Failed to start server:', err);
+    process.exit(1);
+  }
+
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

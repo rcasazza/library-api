@@ -8,7 +8,11 @@ import logoutRoutes from './routes/logout.js';
 import adminRoutes from './routes/admins.js';
 import registerRoutes from './routes/register.js';
 
+import { registerSwagger } from './swagger.js';
+
 import * as tokenStore from './lib/tokenStore.js';
+import { createAccessToken, verifyRefreshToken } from './lib/token.js';
+
 import db from './lib/db.js';
 
 import {
@@ -18,7 +22,7 @@ import {
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-export function buildApp() {
+export async function buildApp() {
   const fastify = Fastify({
     logger: isDev
       ? {
@@ -32,6 +36,9 @@ export function buildApp() {
         }
       : true,
   });
+
+  // fastify.decorate('createAccessToken', createAccessToken);
+  // fastify.decorate('verifyRefreshToken', verifyRefreshToken);
 
   fastify.decorate('tokenStore', tokenStore);
   fastify.decorate('tokenBlacklist', {
@@ -62,7 +69,8 @@ export function buildApp() {
       url.startsWith('/api/login') ||
       url.startsWith('/api/refresh') ||
       url.startsWith('/api/logout') ||
-      url.startsWith('/api/register')
+      url.startsWith('/api/register') ||
+      url.startsWith('/docs')
     ) {
       return;
     }
@@ -79,6 +87,10 @@ export function buildApp() {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
   });
+
+  if (process.env.NODE_ENV !== 'test') {
+    await registerSwagger(fastify);
+  }
 
   fastify.register(adminRoutes);
   fastify.register(loginRoutes);

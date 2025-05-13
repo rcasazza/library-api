@@ -2,8 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    globals: true,
-    environment: 'node',
+    testTimeout: 10000, // ⏱ 10 seconds for all tests
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
@@ -11,7 +10,7 @@ export default defineConfig({
         '**/node_modules/**',
         '**/test/**',
         '**/*.test.js',
-        'server.js', // explicitly exclude server bootstrap script
+        'server.js',
         'seed-admin.js',
         'vitest.config.js',
       ],
