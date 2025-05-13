@@ -13,6 +13,7 @@ export default defineConfig({
         'server.js',
         'seed-admin.js',
         'vitest.config.js',
+        'load-tests/**',
       ],
       lines: 90,
       functions: 90,
