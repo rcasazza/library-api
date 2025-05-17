@@ -1,6 +1,9 @@
 {
   "name": "library-api",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=23.0.0"
+  },
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -11,7 +14,8 @@
     "test:file": "dotenv -e .env -- vitest run test/register.test.js",
     "test:filter": "dotenv -e .env -- vitest run -t",
     "test:coverage": "dotenv -e .env -- vitest run --coverage",
-    "load:login": "node load-tests/load-login.js"
+    "load:login": "node load-tests/load-login.js",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
