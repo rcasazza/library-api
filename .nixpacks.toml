@@ -5,5 +5,5 @@ nixPkgs = ["nodejs_23", "python3", "gcc", "gnumake"]
 cmds = ["npm install", "npm rebuild bcrypt"]
 
 [start]
-cmd = "node seed-admin.js && node server.js"
+cmd = "node lib/db.js && node seed-admin.js && node server.js"
 
