@@ -1,2 +1,9 @@
 [phases.setup]
-nixPkgs = ["nodejs_23"]
+nixPkgs = ["nodejs_23", "python3", "gcc", "gnumake"]
+
+[phases.install]
+cmds = ["npm install", "npm rebuild bcrypt"]
+
+[start]
+cmd = "node seed-admin.js && node server.js"
+
